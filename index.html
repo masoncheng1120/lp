@@ -19,7 +19,7 @@
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } = React;
 
         // --- Utility Functions ---
 
@@ -30,63 +30,71 @@
             return colors[Math.floor(Math.random() * colors.length)];
         };
 
-        // --- Real Life Scenarios Data ---
+        // --- Grade 11 Real Life Scenarios ---
         const SCENARIOS = [
             {
-                id: 'furniture',
-                title: "The Furniture Workshop",
-                icon: "hammer",
-                type: "Production Optimization",
-                intro: "A local artisan runs a small furniture workshop that specializes in handcrafted chairs (x) and tables (y). The artisan wants to optimize production to maximize profit, but is limited by available labor hours in two key departments: Carpentry and Painting.",
-                constraints: [
-                    { title: "Carpentry Department", desc: "Each chair requires 2 hours of carpentry, while a table is more complex and needs 3 hours. The department has a maximum of 24 labor hours available per week.", color: "blue" },
-                    { title: "Painting Department", desc: "Each chair needs 1 hour for painting and varnishing, whereas a table requires 2 hours. The painting team has only 10 hours available this week.", color: "orange" },
-                    { title: "Physical Constraints", desc: "You cannot produce negative quantities of furniture (x ≥ 0, y ≥ 0).", color: "slate" }
-                ],
-                goal: "Determine the feasible production quantities (x, y) that satisfy all labor constraints.",
-                equations: [
-                    { a: 2, b: 3, c: 24, sign: '≤' },
-                    { a: 1, b: 2, c: 10, sign: '≤' },
-                    { a: 1, b: 0, c: 0, sign: '≥' },
-                    { a: 0, b: 1, c: 0, sign: '≥' }
-                ]
-            },
-            {
-                id: 'diet',
-                title: "Clinical Diet Plan",
+                id: 'bakesale',
+                title: "The School Bake Sale",
                 icon: "apple",
-                type: "Health & Nutrition",
-                intro: "A clinical nutritionist is designing a specialized diet plan for a patient using two different food supplements, Food A (x) and Food B (y). The goal is to meet minimum daily vitamin requirements while managing the intake effectively.",
+                type: "Maximize Profit",
+                intro: "You are organizing a bake sale to raise money for prom. You plan to sell Cupcakes (x) and Cookies (y). Your goal is to make the most money possible, but you are limited by how much flour you have and how much time you have to bake before the event starts.",
+                modelDescription: "Optimization Goal: Find the combination of Cupcakes and Cookies that gives the highest total profit.",
                 constraints: [
-                    { title: "Vitamin C Requirement", desc: "Food A is rich in Vitamin C (2 units/g), while Food B contains 1 unit/g. The patient must consume at least 8 units of Vitamin C daily.", color: "emerald" },
-                    { title: "Vitamin D Requirement", desc: "Food A contains 1 unit of Vitamin D per gram, and Food B contains 2 units per gram. The daily requirement is at least 10 units.", color: "amber" },
-                    { title: "Reality Constraint", desc: "Food amounts cannot be negative (x ≥ 0, y ≥ 0).", color: "slate" }
+                    { title: "Flour Constraint", desc: "You have 40 cups of flour. A batch of Cupcakes needs 4 cups, and a batch of Cookies needs 2 cups.", color: "blue" },
+                    { title: "Time Constraint", desc: "You have 12 hours max. Cupcakes take 1 hour per batch, Cookies take 1 hour per batch.", color: "orange" },
+                    { title: "Reality Constraint", desc: "You can't bake negative amounts.", color: "slate" }
                 ],
-                goal: "Visualize the region of all possible diet combinations that meet the nutritional minimums.",
+                goal: "Profit Function: $20 per Cupcake batch + $15 per Cookie batch",
+                objective: { a: 20, b: 15, startVal: 0 },
                 equations: [
-                    { a: 2, b: 1, c: 8, sign: '≥' },
-                    { a: 1, b: 2, c: 10, sign: '≥' },
+                    { a: 4, b: 2, c: 40, sign: '≤' },
+                    { a: 1, b: 1, c: 12, sign: '≤' },
                     { a: 1, b: 0, c: 0, sign: '≥' },
                     { a: 0, b: 1, c: 0, sign: '≥' }
                 ]
             },
             {
-                id: 'investment',
-                title: "Portfolio Strategy",
-                icon: "dollar-sign",
-                type: "Financial Planning",
-                intro: "A financial advisor is building a diversified portfolio for a client, allocating funds between High-Growth Tech Stocks (x) and Secure Government Bonds (y). All amounts are measured in thousands of dollars.",
+                id: 'study',
+                title: "Exam Study Schedule",
+                icon: "book-open",
+                type: "Maximize Grades",
+                intro: "Finals are coming up! You need to split your study time between Math (x) and Science (y). You want to maximize your total score points, but you have limited hours in the day and strict minimum requirements from your parents.",
+                modelDescription: "Optimization Goal: Allocate your study hours to get the highest possible combined score, assuming studying effectively yields points.",
                 constraints: [
-                    { title: "Total Capital Limit", desc: "The client has a total budget of $20,000 available for investment. The sum of both investments cannot exceed this amount (x + y ≤ 20).", color: "indigo" },
-                    { title: "Risk Management Cap", desc: "To mitigate risk, the advisor limits the investment in volatile Tech Stocks to a maximum of $12,000.", color: "rose" },
-                    { title: "Stability Minimum", desc: "To ensure stability, the portfolio requires a minimum investment of $4,000 in Government Bonds.", color: "cyan" },
-                    { title: "Basic Constraints", desc: "Investment amounts cannot be negative.", color: "slate" }
+                    { title: "Total Time", desc: "You only have 10 hours available to study this weekend.", color: "indigo" },
+                    { title: "Math Requirement", desc: "You are struggling in Math, so you must study at least 2 hours.", color: "rose" },
+                    { title: "Balance Constraint", desc: "You shouldn't study Science more than twice as much as Math.", color: "emerald" },
+                    { title: "Basic Logic", desc: "Time cannot be negative.", color: "slate" }
                 ],
-                goal: "Identify the feasible investment strategy that adheres to the budget and risk management rules.",
+                goal: "Score Function: 5 points/hr for Math + 4 points/hr for Science",
+                objective: { a: 5, b: 4, startVal: 0 },
                 equations: [
+                    { a: 1, b: 1, c: 10, sign: '≤' },
+                    { a: 1, b: 0, c: 2, sign: '≥' },
+                    { a: -2, b: 1, c: 0, sign: '≤' }, // y - 2x <= 0  -> y <= 2x
+                    { a: 1, b: 0, c: 0, sign: '≥' },
+                    { a: 0, b: 1, c: 0, sign: '≥' }
+                ]
+            },
+            {
+                id: 'summerjob',
+                title: "Summer Jobs",
+                icon: "dollar-sign",
+                type: "Maximize Income",
+                intro: "You have two summer job offers. Job A (Landscaping) pays well but is hard physical work. Job B (Library Assistant) pays less but is easy. You want to earn as much money as possible for a new car.",
+                modelDescription: "Optimization Goal: Determine how many hours to work at each job to maximize your total summer income.",
+                constraints: [
+                    { title: "Energy Limit", desc: "Landscaping (x) is tiring. You can't handle more than 10 hours a week.", color: "amber" },
+                    { title: "Work Week Limit", desc: "You are allowed to work a maximum of 20 hours total per week.", color: "cyan" },
+                    { title: "Minimum Income", desc: "You need to work enough to pay for gas, so you need at least 5 hours at the library.", color: "blue" },
+                    { title: "Reality", desc: "Hours cannot be negative.", color: "slate" }
+                ],
+                goal: "Income Function: $25/hr Landscaping + $15/hr Library",
+                objective: { a: 25, b: 15, startVal: 0 },
+                equations: [
+                    { a: 1, b: 0, c: 10, sign: '≤' },
                     { a: 1, b: 1, c: 20, sign: '≤' },
-                    { a: 1, b: 0, c: 12, sign: '≤' },
-                    { a: 0, b: 1, c: 4, sign: '≥' },
+                    { a: 0, b: 1, c: 5, sign: '≥' },
                     { a: 1, b: 0, c: 0, sign: '≥' },
                     { a: 0, b: 1, c: 0, sign: '≥' }
                 ]
@@ -97,11 +105,12 @@
 
         const checkInequality = (x, y, ineq) => {
             const val = ineq.a * x + ineq.b * y;
+            const tolerance = 1e-10;
             switch (ineq.sign) {
-                case '≤': return val <= ineq.c;
-                case '≥': return val >= ineq.c;
-                case '<': return val < ineq.c;
-                case '>': return val > ineq.c;
+                case '≤': return val <= ineq.c + tolerance;
+                case '≥': return val >= ineq.c - tolerance;
+                case '<': return val < ineq.c - tolerance;
+                case '>': return val > ineq.c + tolerance;
                 default: return false;
             }
         };
@@ -149,10 +158,11 @@
             'hammer': <><path d="M15 12l-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"></path><path d="M17.64 15L22 10.64"></path><path d="M20.91 11.7l-1.25-1.25c-.6-.6-.93-1.4-.93-2.25V7.86c0-.55-.45-1-1-1H14.14c-.85 0-1.65-.33-2.25-.93L10.64 4.64"></path></>,
             'apple': <><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path><path d="M10 2c1 .5 2 2 2 5"></path></>,
             'save': <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></>,
-            'play': <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            'play': <polygon points="5 3 19 12 5 21 5 3"></polygon>,
+            'sliders': <><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></>
         };
 
-        const Icon = ({ name, size = 16, className }) => {
+        const Icon = memo(({ name, size = 16, className }) => {
             const content = ICONS[name] || null;
             return (
                 <svg 
@@ -170,9 +180,9 @@
                     {content}
                 </svg>
             );
-        };
+        });
 
-        const ScenarioModal = ({ scenario, onClose, onLoadEquations, onSave }) => {
+        const ScenarioModal = memo(({ scenario, onClose, onLoadEquations, onSave }) => {
             if (!scenario) return null;
 
             const getColorClasses = (color) => {
@@ -210,9 +220,17 @@
                         
                         {/* Body */}
                         <div className="p-6 overflow-y-auto max-h-[60vh]">
-                            <p className="text-slate-600 text-lg mb-6 leading-relaxed">
+                            <p className="text-slate-600 text-lg mb-4 leading-relaxed">
                                 {scenario.intro}
                             </p>
+
+                            {/* The Math Model Explanation */}
+                            <div className="mb-6 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                                <h4 className="text-xs font-bold text-indigo-800 uppercase mb-1">The Math Model</h4>
+                                <p className="text-sm text-indigo-900 font-medium">
+                                    {scenario.modelDescription}
+                                </p>
+                            </div>
                             
                             <div className="space-y-3">
                                 {scenario.constraints.map((item, idx) => (
@@ -224,7 +242,7 @@
                             </div>
 
                             <div className="mt-6 p-4 bg-slate-50 rounded-xl border-l-4 border-slate-400">
-                                <h3 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-wide">Objective</h3>
+                                <h3 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-wide">Objective Equation</h3>
                                 <p className="text-slate-700 italic font-medium">{scenario.goal}</p>
                             </div>
                         </div>
@@ -232,7 +250,7 @@
                         {/* Footer / Actions */}
                         <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
                             <button 
-                                onClick={() => onLoadEquations(scenario.equations)}
+                                onClick={() => onLoadEquations(scenario.equations, scenario.objective)}
                                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-semibold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
                             >
                                 <Icon name="drafting-compass" />
@@ -250,9 +268,9 @@
                     </div>
                 </div>
             );
-        };
+        });
 
-        const InequalityRow = ({ ineq, onChange, onRemove }) => {
+        const InequalityRow = memo(({ ineq, onChange, onRemove }) => {
             const handleChange = (field, value) => {
                 onChange({ ...ineq, [field]: value });
             };
@@ -350,9 +368,9 @@
                     )}
                 </div>
             );
-        };
+        });
 
-        const CanvasGraph = ({ inequalities, showFeasibleOnly }) => {
+        const CanvasGraph = memo(({ inequalities, showFeasibleOnly, objective }) => {
             const canvasRef = useRef(null);
             const containerRef = useRef(null);
             
@@ -379,9 +397,10 @@
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
 
-            useEffect(() => {
+            // Use LayoutEffect for smoother synchronization with browser paint
+            useLayoutEffect(() => {
                 draw();
-            }, [inequalities, scale, offset, showFeasibleOnly]);
+            }, [inequalities, scale, offset, showFeasibleOnly, objective]);
 
             const draw = () => {
                 const canvas = canvasRef.current;
@@ -409,13 +428,14 @@
                 const mathYMin = Math.min(yMin, yMax);
                 const mathYMax = Math.max(yMin, yMax);
 
-                drawGridAndAxes(ctx, width, height, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY, originX, originY);
-
+                // --- 1. Draw Feasible Region Background FIRST ---
                 if (showFeasibleOnly) {
                     ctx.save();
+                    // Fill entire screen with green
                     ctx.fillStyle = 'rgba(34, 197, 94, 0.4)'; 
                     ctx.fillRect(0, 0, width, height);
                     
+                    // Cut out the invalid areas
                     ctx.globalCompositeOperation = 'destination-out';
                     
                     inequalities.forEach(ineq => {
@@ -424,41 +444,84 @@
                     });
                     
                     ctx.restore();
+                }
 
-                    inequalities.forEach(ineq => {
-                         if (!ineq.visible) return;
-                         drawLine(ctx, ineq, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY);
-                    });
+                // --- 2. Draw Grid and Axes (So they are ON TOP of the feasible shading) ---
+                drawGridAndAxes(ctx, width, height, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY, originX, originY);
 
-                } else {
-                    inequalities.forEach(ineq => {
-                        if (!ineq.visible) return;
-                        if (ineq.showRegion) {
-                            ctx.fillStyle = ineq.color + '33';
-                            ctx.save();
-                            drawHalfPlane(ctx, ineq, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY, false);
-                            ctx.restore();
-                        }
-                        drawLine(ctx, ineq, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY);
-                    });
+                // --- 3. Draw Inequality Lines ---
+                inequalities.forEach(ineq => {
+                    if (!ineq.visible) return;
+                    if (!showFeasibleOnly && ineq.showRegion) {
+                        // If NOT in "feasible only" mode, draw individual shaded regions
+                        ctx.fillStyle = ineq.color + '33';
+                        ctx.save();
+                        drawHalfPlane(ctx, ineq, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY, false);
+                        ctx.restore();
+                    }
+                    drawLine(ctx, ineq, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY);
+                });
+
+                // --- 4. Draw Objective Line ---
+                if (objective && objective.visible) {
+                    drawObjectiveLine(ctx, objective, xMin, xMax, mathYMin, mathYMax, toPxX, toPxY);
                 }
             };
 
+            const drawObjectiveLine = (ctx, obj, xMin, xMax, yMin, yMax, toPxX, toPxY) => {
+                // Ax + By = C
+                const pts = getIntersections(obj.a, obj.b, obj.c, xMin, xMax, yMin, yMax);
+                if (pts.length < 2) return;
+                
+                pts.sort((p1, p2) => p1.x - p2.x);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(toPxX(pts[0].x), toPxY(pts[0].y));
+                ctx.lineTo(toPxX(pts[1].x), toPxY(pts[1].y));
+                
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#4f46e5'; // Indigo-600
+                ctx.setLineDash([15, 10]); // Large dashes
+                ctx.stroke();
+                
+                // Draw label
+                const midX = (pts[0].x + pts[1].x) / 2;
+                const midY = (pts[0].y + pts[1].y) / 2;
+                
+                // Only draw label if middle is somewhat visible
+                if (midX >= xMin && midX <= xMax && midY >= yMin && midY <= yMax) {
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.font = 'bold 14px monospace';
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 4;
+                    const text = `P = ${obj.c.toFixed(1)}`; // Added decimal formatting
+                    ctx.strokeText(text, toPxX(midX) + 15, toPxY(midY) - 15);
+                    ctx.fillText(text, toPxX(midX) + 15, toPxY(midY) - 15);
+                }
+                
+                ctx.restore();
+            };
+
             const drawGridAndAxes = (ctx, width, height, xMin, xMax, yMin, yMax, toPxX, toPxY, originX, originY) => {
+                ctx.save(); // Save context to protect against outside state changes
+                
                 ctx.lineWidth = 1;
-                ctx.strokeStyle = '#e2e8f0'; 
-                ctx.fillStyle = '#64748b';
-                ctx.font = '10px sans-serif';
+                ctx.strokeStyle = '#cbd5e1'; 
+                ctx.fillStyle = '#475569';
+                ctx.font = '14px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
 
                 let step = 1;
                 if (scale < 20) step = 5;
                 if (scale < 10) step = 10;
+                if (scale < 2) step = 50;
                 
                 const startX = Math.floor(xMin / step) * step;
                 const endX = Math.ceil(xMax / step) * step;
                 
+                // Draw vertical grid lines
                 for (let x = startX; x <= endX; x += step) {
                     const px = toPxX(x);
                     ctx.beginPath();
@@ -467,7 +530,7 @@
                     ctx.stroke();
 
                     if (x !== 0 && originY >= -20 && originY <= height + 20) {
-                        ctx.fillText(x.toString(), px, originY + 5);
+                        ctx.fillText(x.toString(), px, originY + 8);
                     }
                 }
 
@@ -477,6 +540,7 @@
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'middle';
 
+                // Draw horizontal grid lines
                 for (let y = startY; y <= endY; y += step) {
                     const py = toPxY(y);
                     ctx.beginPath();
@@ -485,10 +549,11 @@
                     ctx.stroke();
 
                     if (y !== 0 && originX >= -20 && originX <= width + 20) {
-                        ctx.fillText(y.toString(), originX - 5, py);
+                        ctx.fillText(y.toString(), originX - 8, py);
                     }
                 }
 
+                // Draw Axes (Thicker)
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = '#475569';
                 
@@ -508,8 +573,10 @@
                 
                 if (originX >= 0 && originX <= width && originY >= 0 && originY <= height) {
                      ctx.fillStyle = '#475569';
-                     ctx.fillText("0", originX - 5, originY + 5);
+                     ctx.fillText("0", originX - 8, originY + 8);
                 }
+                
+                ctx.restore();
             };
 
             const drawLine = (ctx, ineq, xMin, xMax, yMin, yMax, toPxX, toPxY) => {
@@ -605,7 +672,7 @@
                 e.preventDefault();
                 const zoomSpeed = 0.1;
                 const newScale = e.deltaY > 0 ? scale * (1 - zoomSpeed) : scale * (1 + zoomSpeed);
-                if (newScale > 5 && newScale < 500) setScale(newScale);
+                if (newScale > 1 && newScale < 1000) setScale(newScale);
             };
 
             return (
@@ -626,47 +693,50 @@
                     </div>
                 </div>
             );
-        };
+        });
 
         const App = () => {
             const [inequalities, setInequalities] = useState([
                 { id: 1, a: 1, b: 1, c: 6, sign: '≤', color: '#3b82f6', showRegion: true, visible: true },
             ]);
             
+            const [objective, setObjective] = useState({ a: 1, b: 1, c: 0, visible: false });
             const [showFeasibleOnly, setShowFeasibleOnly] = useState(false);
             const [activeScenario, setActiveScenario] = useState(null);
             const [savedScenario, setSavedScenario] = useState(null);
 
-            const addInequality = (data = null) => {
-                const newId = Math.max(0, ...inequalities.map(i => i.id)) + 1;
-                const defaults = data || { a: 1, b: 1, c: 5, sign: '≤' };
-                
-                setInequalities([
-                    ...inequalities, 
-                    { 
-                        id: newId, 
-                        ...defaults,
-                        color: getRandomColor(), 
-                        showRegion: true, 
-                        visible: true 
-                    }
-                ]);
-            };
+            // Use Callback to prevent function recreation on every render, allowing InequalityRow to be memoized
+            const addInequality = useCallback((data = null) => {
+                setInequalities(prev => {
+                    const newId = Math.max(0, ...prev.map(i => i.id)) + 1;
+                    const defaults = data || { a: 1, b: 1, c: 5, sign: '≤' };
+                    return [
+                        ...prev, 
+                        { 
+                            id: newId, 
+                            ...defaults,
+                            color: getRandomColor(), 
+                            showRegion: true, 
+                            visible: true 
+                        }
+                    ];
+                });
+            }, []);
 
-            const updateInequality = (updated) => {
-                setInequalities(inequalities.map(i => i.id === updated.id ? updated : i));
-            };
+            const updateInequality = useCallback((updated) => {
+                setInequalities(prev => prev.map(i => i.id === updated.id ? updated : i));
+            }, []);
 
-            const removeInequality = (id) => {
-                setInequalities(inequalities.filter(i => i.id !== id));
-            };
+            const removeInequality = useCallback((id) => {
+                setInequalities(prev => prev.filter(i => i.id !== id));
+            }, []);
 
-            const generateRandomScenario = () => {
+            const generateRandomScenario = useCallback(() => {
                 const random = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
                 setActiveScenario(random);
-            };
+            }, []);
 
-            const loadScenarioEquations = (eqs) => {
+            const loadScenarioEquations = useCallback((eqs, objFunc) => {
                 const newEqs = eqs.map((eq, idx) => ({
                     id: idx + 1,
                     ...eq,
@@ -675,15 +745,27 @@
                     visible: true
                 }));
                 setInequalities(newEqs);
-                setActiveScenario(null); 
-                setSavedScenario(null); // Clear saved if loaded
-                setShowFeasibleOnly(true);
-            };
+                
+                if (objFunc) {
+                    setObjective({ 
+                        a: objFunc.a, 
+                        b: objFunc.b, 
+                        c: objFunc.startVal || 0, 
+                        visible: true 
+                    });
+                } else {
+                    setObjective(prev => ({ ...prev, visible: false }));
+                }
 
-            const saveScenarioForLater = (scenario) => {
+                setActiveScenario(null); 
+                setSavedScenario(null); 
+                setShowFeasibleOnly(true);
+            }, []);
+
+            const saveScenarioForLater = useCallback((scenario) => {
                 setSavedScenario(scenario);
                 setActiveScenario(null);
-            };
+            }, []);
 
             return (
                 <div className="flex h-screen w-full flex-col md:flex-row relative">
@@ -741,8 +823,76 @@
                                 </button>
                             </div>
 
+                            {/* Optimization / Objective Function Section */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <Icon name="sliders" size={12} /> Optimization
+                                    </h2>
+                                    <button
+                                        onClick={() => setObjective(prev => ({...prev, visible: !prev.visible}))}
+                                        className={`text-xs px-2 py-1 rounded-md font-bold transition-all ${objective.visible ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
+                                    >
+                                        {objective.visible ? 'ACTIVE' : 'OFF'}
+                                    </button>
+                                </div>
+                                
+                                {objective.visible && (
+                                    <div className="bg-white p-4 rounded-xl border border-indigo-200 shadow-sm animate-in fade-in slide-in-from-top-2 relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                        
+                                        <p className="text-xs text-indigo-600 font-semibold mb-2">Objective Function Line</p>
+                                        
+                                        <div className="flex items-center gap-2 mb-4 text-sm font-mono justify-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            <span className="font-serif italic text-indigo-700 font-bold text-lg">P</span>
+                                            <span className="text-slate-400">=</span>
+                                            <input 
+                                                type="number" 
+                                                value={objective.a}
+                                                onChange={(e) => setObjective(prev => ({...prev, a: Number(e.target.value)}))}
+                                                className="w-14 p-1 border border-indigo-100 rounded text-center bg-white focus:ring-2 focus:ring-indigo-200 outline-none font-bold text-slate-700"
+                                            />
+                                            <span className="font-serif italic text-slate-600">x</span>
+                                            <span className="text-slate-400">+</span>
+                                            <input 
+                                                type="number" 
+                                                value={objective.b}
+                                                onChange={(e) => setObjective(prev => ({...prev, b: Number(e.target.value)}))}
+                                                className="w-14 p-1 border border-indigo-100 rounded text-center bg-white focus:ring-2 focus:ring-indigo-200 outline-none font-bold text-slate-700"
+                                            />
+                                            <span className="font-serif italic text-slate-600">y</span>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center text-xs text-slate-500 font-medium">
+                                                <span>Slide to find vertex</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-indigo-600 font-bold">P =</span>
+                                                    <input 
+                                                        type="number"
+                                                        step="0.1"
+                                                        value={objective.c}
+                                                        onChange={(e) => setObjective(prev => ({...prev, c: parseFloat(e.target.value) || 0}))}
+                                                        className="w-20 p-1 text-right border border-indigo-200 rounded text-indigo-700 font-bold bg-white text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="-100" 
+                                                max="500" 
+                                                step="0.1"
+                                                value={objective.c}
+                                                onChange={(e) => setObjective(prev => ({...prev, c: Number(e.target.value)}))}
+                                                className="w-full accent-indigo-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer hover:bg-slate-300 transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="flex justify-between items-center mb-2">
-                                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Equations</h2>
+                                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Constraints</h2>
                                 <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{inequalities.length}</span>
                             </div>
 
@@ -788,7 +938,7 @@
 
                     {/* Main Canvas Area */}
                     <div className="flex-1 relative bg-gray-50 overflow-hidden">
-                        <CanvasGraph inequalities={inequalities} showFeasibleOnly={showFeasibleOnly} />
+                        <CanvasGraph inequalities={inequalities} showFeasibleOnly={showFeasibleOnly} objective={objective} />
                     </div>
                 </div>
             );
